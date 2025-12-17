@@ -1,8 +1,7 @@
--- Advanced Roblox UI Library (Loadstring Ready)
--- Features:
--- [1] OPTIONAL Draggable Window
--- [3] Linoria-style UI
--- [5] Themes (Dark / Light)
+-- Advanced Roblox UI Library (Fixed)
+-- Fixes:
+-- 1) Draggable works ONLY on title bar (not whole window)
+-- 2) Sections auto-resize so buttons are not overlapped
 
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -17,33 +16,22 @@ local Themes = {
         Element = Color3.fromRGB(40,40,40),
         Accent = Color3.fromRGB(0,170,255),
         Text = Color3.fromRGB(255,255,255)
-    },
-    Light = {
-        Background = Color3.fromRGB(235,235,235),
-        Element = Color3.fromRGB(200,200,200),
-        Accent = Color3.fromRGB(0,120,255),
-        Text = Color3.fromRGB(0,0,0)
     }
 }
 
 local CurrentTheme = Themes.Dark
 
-function UILib:SetTheme(themeName)
-    if Themes[themeName] then
-        CurrentTheme = Themes[themeName]
-    end
+function UILib:SetTheme(name)
+    if Themes[name] then CurrentTheme = Themes[name] end
 end
 
 local function createGui()
     local gui = Instance.new("ScreenGui")
-    gui.Name = "UILibrary"
     gui.ResetOnSpawn = false
     gui.Parent = Player:WaitForChild("PlayerGui")
     return gui
 end
 
--- Create Window
--- settings = { Draggable = true/false }
 function UILib:CreateWindow(title, settings)
     settings = settings or {}
     local draggable = settings.Draggable ~= false
@@ -57,10 +45,25 @@ function UILib:CreateWindow(title, settings)
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
 
-    -- Optional dragging
+    -- Title bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1,0,0,40)
+    titleBar.BackgroundTransparency = 1
+    titleBar.Parent = frame
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1,0,1,0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title or "Window"
+    titleLabel.TextColor3 = CurrentTheme.Text
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 18
+    titleLabel.Parent = titleBar
+
+    -- Proper dragging (FIXED)
     if draggable then
         local dragging, dragStart, startPos
-        frame.InputBegan:Connect(function(input)
+        titleBar.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
                 dragStart = input.Position
@@ -78,16 +81,7 @@ function UILib:CreateWindow(title, settings)
         end)
     end
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1,0,0,40)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = title or "Window"
-    titleLabel.TextColor3 = CurrentTheme.Text
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 18
-    titleLabel.Parent = frame
-
-    -- Tabs bar
+    -- Tabs
     local tabBar = Instance.new("Frame")
     tabBar.Position = UDim2.new(0,10,0,45)
     tabBar.Size = UDim2.new(1,-20,0,35)
@@ -99,27 +93,25 @@ function UILib:CreateWindow(title, settings)
     tabLayout.Padding = UDim.new(0,6)
     tabLayout.Parent = tabBar
 
-    -- Pages container
     local pages = Instance.new("Frame")
-    pages.Position = UDim2.new(0,10,0,85)
-    pages.Size = UDim2.new(1,-20,1,-95)
+    pages.Position = UDim2.new(0,10,0,90)
+    pages.Size = UDim2.new(1,-20,1,-100)
     pages.BackgroundTransparency = 1
     pages.Parent = frame
 
     local window = {}
-    local tabs = {}
-    local currentTab
+    local currentPage
 
     function window:CreateTab(name)
-        local tabBtn = Instance.new("TextButton")
-        tabBtn.Size = UDim2.new(0,120,1,0)
-        tabBtn.BackgroundColor3 = CurrentTheme.Element
-        tabBtn.Text = name
-        tabBtn.TextColor3 = CurrentTheme.Text
-        tabBtn.Font = Enum.Font.Gotham
-        tabBtn.TextSize = 14
-        tabBtn.Parent = tabBar
-        Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0,6)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0,120,1,0)
+        btn.BackgroundColor3 = CurrentTheme.Element
+        btn.Text = name
+        btn.TextColor3 = CurrentTheme.Text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 14
+        btn.Parent = tabBar
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
 
         local page = Instance.new("Frame")
         page.Size = UDim2.new(1,0,1,0)
@@ -131,27 +123,33 @@ function UILib:CreateWindow(title, settings)
         pageLayout.Padding = UDim.new(0,10)
         pageLayout.Parent = page
 
-        local tab = {}
-
-        tabBtn.MouseButton1Click:Connect(function()
-            if currentTab then currentTab.page.Visible = false end
-            currentTab = {page = page}
+        btn.MouseButton1Click:Connect(function()
+            if currentPage then currentPage.Visible = false end
+            currentPage = page
             page.Visible = true
         end)
 
+        if not currentPage then
+            currentPage = page
+            page.Visible = true
+        end
+
+        local tab = {}
+
         function tab:CreateSection(title)
             local section = Instance.new("Frame")
-            section.Size = UDim2.new(1,0,0,40)
             section.BackgroundColor3 = CurrentTheme.Element
+            section.Size = UDim2.new(1,0,0,0)
+            section.AutomaticSize = Enum.AutomaticSize.Y -- FIXED
             section.Parent = page
             Instance.new("UICorner", section).CornerRadius = UDim.new(0,6)
 
-            local secLayout = Instance.new("UIListLayout")
-            secLayout.Padding = UDim.new(0,6)
-            secLayout.Parent = section
+            local layout = Instance.new("UIListLayout")
+            layout.Padding = UDim.new(0,6)
+            layout.Parent = section
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1,0,0,24)
+            label.Size = UDim2.new(1,-10,0,24)
             label.BackgroundTransparency = 1
             label.Text = title
             label.TextColor3 = CurrentTheme.Text
@@ -162,27 +160,22 @@ function UILib:CreateWindow(title, settings)
             local sectionAPI = {}
 
             function sectionAPI:AddButton(text, callback)
-                local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(1,-10,0,28)
-                btn.BackgroundColor3 = CurrentTheme.Background
-                btn.Text = text
-                btn.TextColor3 = CurrentTheme.Text
-                btn.Font = Enum.Font.Gotham
-                btn.TextSize = 13
-                btn.Parent = section
-                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+                local b = Instance.new("TextButton")
+                b.Size = UDim2.new(1,-10,0,28)
+                b.BackgroundColor3 = CurrentTheme.Background
+                b.Text = text
+                b.TextColor3 = CurrentTheme.Text
+                b.Font = Enum.Font.Gotham
+                b.TextSize = 13
+                b.Parent = section
+                Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
 
-                btn.MouseButton1Click:Connect(function()
+                b.MouseButton1Click:Connect(function()
                     if callback then callback() end
                 end)
             end
 
             return sectionAPI
-        end
-
-        if not currentTab then
-            currentTab = {page = page}
-            page.Visible = true
         end
 
         return tab
@@ -192,9 +185,3 @@ function UILib:CreateWindow(title, settings)
 end
 
 return UILib
-
--- LOADSTRING EXAMPLE:
--- local UILib = loadstring(game:HttpGet("RAW_LINK"))()
--- UILib:SetTheme("Dark")
--- local win = UILib:CreateWindow("My Hub", { Draggable = false }) -- optional
--- win:AddButton("Test", function() print("Hello") end)
