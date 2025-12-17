@@ -1,10 +1,10 @@
--- Advanced Roblox UI Library (Full Fixed Version)
+-- Advanced Roblox UI Library (Rayfield Style)
 -- Features:
 -- ✅ Draggable window (title-bar only, optional)
--- ✅ Linoria-style UI
--- ✅ Themes (Dark / Light)
 -- ✅ Tabs + Sections
--- ✅ Buttons appear correctly under section title
+-- ✅ Buttons, Toggles, Dropdowns
+-- ✅ Rayfield-style aesthetics
+-- ✅ Dark theme
 
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -15,8 +15,9 @@ local UILib = {}
 -- Themes
 local Themes = {
     Dark = {
-        Background = Color3.fromRGB(25,25,25),
-        Element = Color3.fromRGB(40,40,40),
+        Background = Color3.fromRGB(30,30,30),
+        Section = Color3.fromRGB(45,45,45),
+        Element = Color3.fromRGB(60,60,60),
         Accent = Color3.fromRGB(0,170,255),
         Text = Color3.fromRGB(255,255,255)
     }
@@ -45,8 +46,9 @@ function UILib:CreateWindow(title, settings)
     frame.Size = UDim2.new(0, 520, 0, 360)
     frame.Position = UDim2.new(0.5, -260, 0.5, -180)
     frame.BackgroundColor3 = CurrentTheme.Background
+    frame.BorderSizePixel = 0
     frame.Parent = gui
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
     -- Title bar
     local titleBar = Instance.new("Frame")
@@ -60,10 +62,10 @@ function UILib:CreateWindow(title, settings)
     titleLabel.Text = title or "Window"
     titleLabel.TextColor3 = CurrentTheme.Text
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 18
+    titleLabel.TextSize = 20
     titleLabel.Parent = titleBar
 
-    -- Proper dragging (title bar only)
+    -- Proper dragging
     if draggable then
         local dragging, dragStart, startPos
         titleBar.InputBegan:Connect(function(input)
@@ -108,13 +110,13 @@ function UILib:CreateWindow(title, settings)
     function window:CreateTab(name)
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0,120,1,0)
-        btn.BackgroundColor3 = CurrentTheme.Element
+        btn.BackgroundColor3 = CurrentTheme.Section
         btn.Text = name
         btn.TextColor3 = CurrentTheme.Text
         btn.Font = Enum.Font.Gotham
-        btn.TextSize = 14
+        btn.TextSize = 16
         btn.Parent = tabBar
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
 
         local page = Instance.new("Frame")
         page.Size = UDim2.new(1,0,1,0)
@@ -147,7 +149,7 @@ function UILib:CreateWindow(title, settings)
             section.Size = UDim2.new(1,0,0,0)
             section.AutomaticSize = Enum.AutomaticSize.Y
             section.Parent = page
-            Instance.new("UICorner", section).CornerRadius = UDim.new(0,6)
+            Instance.new("UICorner", section).CornerRadius = UDim.new(0,8)
 
             local layout = Instance.new("UIListLayout")
             layout.Padding = UDim.new(0,6)
@@ -161,7 +163,7 @@ function UILib:CreateWindow(title, settings)
             label.Text = title
             label.TextColor3 = CurrentTheme.Text
             label.Font = Enum.Font.GothamBold
-            label.TextSize = 14
+            label.TextSize = 16
             label.LayoutOrder = 1
             label.Parent = section
 
@@ -170,17 +172,57 @@ function UILib:CreateWindow(title, settings)
             function sectionAPI:AddButton(text, callback)
                 local b = Instance.new("TextButton")
                 b.Size = UDim2.new(1,-10,0,28)
-                b.BackgroundColor3 = CurrentTheme.Background
+                b.BackgroundColor3 = CurrentTheme.Section
                 b.Text = text
                 b.TextColor3 = CurrentTheme.Text
                 b.Font = Enum.Font.Gotham
-                b.TextSize = 13
-                b.LayoutOrder = 2 + #section:GetChildren()
+                b.TextSize = 14
+                b.LayoutOrder = #section:GetChildren() + 1
                 b.Parent = section
                 Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
 
                 b.MouseButton1Click:Connect(function()
                     if callback then callback() end
+                end)
+            end
+
+            function sectionAPI:AddToggle(text, callback)
+                local state = false
+                local t = Instance.new("TextButton")
+                t.Size = UDim2.new(1,-10,0,28)
+                t.BackgroundColor3 = CurrentTheme.Section
+                t.Text = text .. " : OFF"
+                t.TextColor3 = CurrentTheme.Text
+                t.Font = Enum.Font.Gotham
+                t.TextSize = 14
+                t.LayoutOrder = #section:GetChildren() + 1
+                t.Parent = section
+                Instance.new("UICorner", t).CornerRadius = UDim.new(0,6)
+
+                t.MouseButton1Click:Connect(function()
+                    state = not state
+                    t.Text = text .. (state and " : ON" or " : OFF")
+                    if callback then callback(state) end
+                end)
+            end
+
+            function sectionAPI:AddDropdown(text, options, callback)
+                local d = Instance.new("TextButton")
+                d.Size = UDim2.new(1,-10,0,28)
+                d.BackgroundColor3 = CurrentTheme.Section
+                d.Text = text .. ": " .. (options[1] or "")
+                d.TextColor3 = CurrentTheme.Text
+                d.Font = Enum.Font.Gotham
+                d.TextSize = 14
+                d.LayoutOrder = #section:GetChildren() + 1
+                d.Parent = section
+                Instance.new("UICorner", d).CornerRadius = UDim.new(0,6)
+
+                local currentIndex = 1
+                d.MouseButton1Click:Connect(function()
+                    currentIndex = currentIndex % #options + 1
+                    d.Text = text .. ": " .. options[currentIndex]
+                    if callback then callback(options[currentIndex]) end
                 end)
             end
 
