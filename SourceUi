@@ -46,18 +46,18 @@ end
 -- settings = { Draggable = true/false }
 function UILib:CreateWindow(title, settings)
     settings = settings or {}
-    local draggable = settings.Draggable ~= false -- default true
+    local draggable = settings.Draggable ~= false
 
     local gui = createGui()
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 420, 0, 320)
-    frame.Position = UDim2.new(0.5, -210, 0.5, -160)
+    frame.Size = UDim2.new(0, 520, 0, 360)
+    frame.Position = UDim2.new(0.5, -260, 0.5, -180)
     frame.BackgroundColor3 = CurrentTheme.Background
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
 
-    -- OPTIONAL DRAGGING
+    -- Optional dragging
     if draggable then
         local dragging, dragStart, startPos
         frame.InputBegan:Connect(function(input)
@@ -68,9 +68,7 @@ function UILib:CreateWindow(title, settings)
             end
         end)
         UIS.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
         end)
         UIS.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -80,7 +78,6 @@ function UILib:CreateWindow(title, settings)
         end)
     end
 
-    -- Title
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Size = UDim2.new(1,0,0,40)
     titleLabel.BackgroundTransparency = 1
@@ -90,52 +87,105 @@ function UILib:CreateWindow(title, settings)
     titleLabel.TextSize = 18
     titleLabel.Parent = frame
 
-    -- Container
-    local container = Instance.new("Frame")
-    container.Position = UDim2.new(0,10,0,50)
-    container.Size = UDim2.new(1,-20,1,-60)
-    container.BackgroundTransparency = 1
-    container.Parent = frame
+    -- Tabs bar
+    local tabBar = Instance.new("Frame")
+    tabBar.Position = UDim2.new(0,10,0,45)
+    tabBar.Size = UDim2.new(1,-20,0,35)
+    tabBar.BackgroundTransparency = 1
+    tabBar.Parent = frame
 
-    local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0,8)
-    layout.Parent = container
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.FillDirection = Enum.FillDirection.Horizontal
+    tabLayout.Padding = UDim.new(0,6)
+    tabLayout.Parent = tabBar
+
+    -- Pages container
+    local pages = Instance.new("Frame")
+    pages.Position = UDim2.new(0,10,0,85)
+    pages.Size = UDim2.new(1,-20,1,-95)
+    pages.BackgroundTransparency = 1
+    pages.Parent = frame
 
     local window = {}
+    local tabs = {}
+    local currentTab
 
-    function window:AddButton(text, callback)
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1,0,0,32)
-        btn.BackgroundColor3 = CurrentTheme.Element
-        btn.Text = text
-        btn.TextColor3 = CurrentTheme.Text
-        btn.Font = Enum.Font.Gotham
-        btn.TextSize = 14
-        btn.Parent = container
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+    function window:CreateTab(name)
+        local tabBtn = Instance.new("TextButton")
+        tabBtn.Size = UDim2.new(0,120,1,0)
+        tabBtn.BackgroundColor3 = CurrentTheme.Element
+        tabBtn.Text = name
+        tabBtn.TextColor3 = CurrentTheme.Text
+        tabBtn.Font = Enum.Font.Gotham
+        tabBtn.TextSize = 14
+        tabBtn.Parent = tabBar
+        Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0,6)
 
-        btn.MouseButton1Click:Connect(function()
-            if callback then callback() end
+        local page = Instance.new("Frame")
+        page.Size = UDim2.new(1,0,1,0)
+        page.Visible = false
+        page.BackgroundTransparency = 1
+        page.Parent = pages
+
+        local pageLayout = Instance.new("UIListLayout")
+        pageLayout.Padding = UDim.new(0,10)
+        pageLayout.Parent = page
+
+        local tab = {}
+
+        tabBtn.MouseButton1Click:Connect(function()
+            if currentTab then currentTab.page.Visible = false end
+            currentTab = {page = page}
+            page.Visible = true
         end)
-    end
 
-    function window:AddToggle(text, callback)
-        local state = false
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1,0,0,32)
-        btn.BackgroundColor3 = CurrentTheme.Element
-        btn.Text = text .. " : OFF"
-        btn.TextColor3 = CurrentTheme.Text
-        btn.Font = Enum.Font.Gotham
-        btn.TextSize = 14
-        btn.Parent = container
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+        function tab:CreateSection(title)
+            local section = Instance.new("Frame")
+            section.Size = UDim2.new(1,0,0,40)
+            section.BackgroundColor3 = CurrentTheme.Element
+            section.Parent = page
+            Instance.new("UICorner", section).CornerRadius = UDim.new(0,6)
 
-        btn.MouseButton1Click:Connect(function()
-            state = not state
-            btn.Text = text .. (state and " : ON" or " : OFF")
-            if callback then callback(state) end
-        end)
+            local secLayout = Instance.new("UIListLayout")
+            secLayout.Padding = UDim.new(0,6)
+            secLayout.Parent = section
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1,0,0,24)
+            label.BackgroundTransparency = 1
+            label.Text = title
+            label.TextColor3 = CurrentTheme.Text
+            label.Font = Enum.Font.GothamBold
+            label.TextSize = 14
+            label.Parent = section
+
+            local sectionAPI = {}
+
+            function sectionAPI:AddButton(text, callback)
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1,-10,0,28)
+                btn.BackgroundColor3 = CurrentTheme.Background
+                btn.Text = text
+                btn.TextColor3 = CurrentTheme.Text
+                btn.Font = Enum.Font.Gotham
+                btn.TextSize = 13
+                btn.Parent = section
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+                btn.MouseButton1Click:Connect(function()
+                    if callback then callback() end
+                end)
+            end
+
+            return sectionAPI
+        end
+
+        if not currentTab then
+            currentTab = {page = page}
+            page.Visible = true
+        end
+
+        return tab
     end
 
     return window
