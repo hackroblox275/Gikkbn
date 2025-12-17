@@ -1,10 +1,11 @@
--- Advanced Roblox UI Library (Rayfield Style)
+-- Advanced Roblox UI Library (with Notifications)
 -- Features:
 -- ✅ Draggable window (title-bar only, optional)
 -- ✅ Tabs + Sections
 -- ✅ Buttons, Toggles, Dropdowns
 -- ✅ Rayfield-style aesthetics
 -- ✅ Dark theme
+-- ✅ Notifications
 
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -65,7 +66,7 @@ function UILib:CreateWindow(title, settings)
     titleLabel.TextSize = 20
     titleLabel.Parent = titleBar
 
-    -- Proper dragging
+    -- Draggable title-bar
     if draggable then
         local dragging, dragStart, startPos
         titleBar.InputBegan:Connect(function(input)
@@ -180,10 +181,7 @@ function UILib:CreateWindow(title, settings)
                 b.LayoutOrder = #section:GetChildren() + 1
                 b.Parent = section
                 Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-
-                b.MouseButton1Click:Connect(function()
-                    if callback then callback() end
-                end)
+                b.MouseButton1Click:Connect(function() if callback then callback() end end)
             end
 
             function sectionAPI:AddToggle(text, callback)
@@ -198,7 +196,6 @@ function UILib:CreateWindow(title, settings)
                 t.LayoutOrder = #section:GetChildren() + 1
                 t.Parent = section
                 Instance.new("UICorner", t).CornerRadius = UDim.new(0,6)
-
                 t.MouseButton1Click:Connect(function()
                     state = not state
                     t.Text = text .. (state and " : ON" or " : OFF")
@@ -230,6 +227,42 @@ function UILib:CreateWindow(title, settings)
         end
 
         return tab
+    end
+
+    -- Notification function
+    function window:Notify(title, message, duration)
+        duration = duration or 3
+        local notif = Instance.new("Frame")
+        notif.Size = UDim2.new(0, 250, 0, 60)
+        notif.Position = UDim2.new(1, -260, 0, 20)
+        notif.BackgroundColor3 = CurrentTheme.Section
+        notif.Parent = gui
+        Instance.new("UICorner", notif).CornerRadius = UDim.new(0,8)
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1,-10,0,24)
+        titleLabel.Position = UDim2.new(0,5,0,0)
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = title
+        titleLabel.TextColor3 = CurrentTheme.Text
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextSize = 16
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.Parent = notif
+
+        local msgLabel = Instance.new("TextLabel")
+        msgLabel.Size = UDim2.new(1,-10,0,28)
+        msgLabel.Position = UDim2.new(0,5,0,24)
+        msgLabel.BackgroundTransparency = 1
+        msgLabel.Text = message
+        msgLabel.TextColor3 = CurrentTheme.Text
+        msgLabel.Font = Enum.Font.Gotham
+        msgLabel.TextSize = 14
+        msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+        msgLabel.Parent = notif
+
+        game:GetService("TweenService"):Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, -260, 0, 20)}):Play()
+        delay(duration, function() notif:Destroy() end)
     end
 
     return window
