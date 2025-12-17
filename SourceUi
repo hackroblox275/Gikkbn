@@ -1,7 +1,10 @@
--- Advanced Roblox UI Library (Fixed)
--- Fixes:
--- 1) Draggable works ONLY on title bar (not whole window)
--- 2) Sections auto-resize so buttons are not overlapped
+-- Advanced Roblox UI Library (Full Fixed Version)
+-- Features:
+-- ✅ Draggable window (title-bar only, optional)
+-- ✅ Linoria-style UI
+-- ✅ Themes (Dark / Light)
+-- ✅ Tabs + Sections
+-- ✅ Buttons appear correctly under section title
 
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -60,7 +63,7 @@ function UILib:CreateWindow(title, settings)
     titleLabel.TextSize = 18
     titleLabel.Parent = titleBar
 
-    -- Proper dragging (FIXED)
+    -- Proper dragging (title bar only)
     if draggable then
         local dragging, dragStart, startPos
         titleBar.InputBegan:Connect(function(input)
@@ -121,6 +124,8 @@ function UILib:CreateWindow(title, settings)
 
         local pageLayout = Instance.new("UIListLayout")
         pageLayout.Padding = UDim.new(0,10)
+        pageLayout.FillDirection = Enum.FillDirection.Vertical
+        pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
         pageLayout.Parent = page
 
         btn.MouseButton1Click:Connect(function()
@@ -140,12 +145,14 @@ function UILib:CreateWindow(title, settings)
             local section = Instance.new("Frame")
             section.BackgroundColor3 = CurrentTheme.Element
             section.Size = UDim2.new(1,0,0,0)
-            section.AutomaticSize = Enum.AutomaticSize.Y -- FIXED
+            section.AutomaticSize = Enum.AutomaticSize.Y
             section.Parent = page
             Instance.new("UICorner", section).CornerRadius = UDim.new(0,6)
 
             local layout = Instance.new("UIListLayout")
             layout.Padding = UDim.new(0,6)
+            layout.FillDirection = Enum.FillDirection.Vertical
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
             layout.Parent = section
 
             local label = Instance.new("TextLabel")
@@ -155,6 +162,7 @@ function UILib:CreateWindow(title, settings)
             label.TextColor3 = CurrentTheme.Text
             label.Font = Enum.Font.GothamBold
             label.TextSize = 14
+            label.LayoutOrder = 1
             label.Parent = section
 
             local sectionAPI = {}
@@ -167,6 +175,7 @@ function UILib:CreateWindow(title, settings)
                 b.TextColor3 = CurrentTheme.Text
                 b.Font = Enum.Font.Gotham
                 b.TextSize = 13
+                b.LayoutOrder = 2 + #section:GetChildren()
                 b.Parent = section
                 Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
 
