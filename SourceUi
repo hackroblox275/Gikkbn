@@ -1,0 +1,150 @@
+-- Advanced Roblox UI Library (Loadstring Ready)
+-- Features:
+-- [1] OPTIONAL Draggable Window
+-- [3] Linoria-style UI
+-- [5] Themes (Dark / Light)
+
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+local UILib = {}
+
+-- Themes
+local Themes = {
+    Dark = {
+        Background = Color3.fromRGB(25,25,25),
+        Element = Color3.fromRGB(40,40,40),
+        Accent = Color3.fromRGB(0,170,255),
+        Text = Color3.fromRGB(255,255,255)
+    },
+    Light = {
+        Background = Color3.fromRGB(235,235,235),
+        Element = Color3.fromRGB(200,200,200),
+        Accent = Color3.fromRGB(0,120,255),
+        Text = Color3.fromRGB(0,0,0)
+    }
+}
+
+local CurrentTheme = Themes.Dark
+
+function UILib:SetTheme(themeName)
+    if Themes[themeName] then
+        CurrentTheme = Themes[themeName]
+    end
+end
+
+local function createGui()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "UILibrary"
+    gui.ResetOnSpawn = false
+    gui.Parent = Player:WaitForChild("PlayerGui")
+    return gui
+end
+
+-- Create Window
+-- settings = { Draggable = true/false }
+function UILib:CreateWindow(title, settings)
+    settings = settings or {}
+    local draggable = settings.Draggable ~= false -- default true
+
+    local gui = createGui()
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 420, 0, 320)
+    frame.Position = UDim2.new(0.5, -210, 0.5, -160)
+    frame.BackgroundColor3 = CurrentTheme.Background
+    frame.Parent = gui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+    -- OPTIONAL DRAGGING
+    if draggable then
+        local dragging, dragStart, startPos
+        frame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+            end
+        end)
+        UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+    end
+
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1,0,0,40)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title or "Window"
+    titleLabel.TextColor3 = CurrentTheme.Text
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 18
+    titleLabel.Parent = frame
+
+    -- Container
+    local container = Instance.new("Frame")
+    container.Position = UDim2.new(0,10,0,50)
+    container.Size = UDim2.new(1,-20,1,-60)
+    container.BackgroundTransparency = 1
+    container.Parent = frame
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0,8)
+    layout.Parent = container
+
+    local window = {}
+
+    function window:AddButton(text, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1,0,0,32)
+        btn.BackgroundColor3 = CurrentTheme.Element
+        btn.Text = text
+        btn.TextColor3 = CurrentTheme.Text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 14
+        btn.Parent = container
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+        btn.MouseButton1Click:Connect(function()
+            if callback then callback() end
+        end)
+    end
+
+    function window:AddToggle(text, callback)
+        local state = false
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1,0,0,32)
+        btn.BackgroundColor3 = CurrentTheme.Element
+        btn.Text = text .. " : OFF"
+        btn.TextColor3 = CurrentTheme.Text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 14
+        btn.Parent = container
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+        btn.MouseButton1Click:Connect(function()
+            state = not state
+            btn.Text = text .. (state and " : ON" or " : OFF")
+            if callback then callback(state) end
+        end)
+    end
+
+    return window
+end
+
+return UILib
+
+-- LOADSTRING EXAMPLE:
+-- local UILib = loadstring(game:HttpGet("RAW_LINK"))()
+-- UILib:SetTheme("Dark")
+-- local win = UILib:CreateWindow("My Hub", { Draggable = false }) -- optional
+-- win:AddButton("Test", function() print("Hello") end)
